@@ -1,0 +1,123 @@
+import React, { useState } from "react";
+import { Button, Modal, notification } from "antd";
+
+const MultiPageModal = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const pages = [
+    <div>Print This Form</div>,
+    <div>Page 2 Content: Here's some additional information.</div>,
+    <div>Page 3 Content: Almost there. Just one more step!</div>,
+    <div>Page 4 Content: All done! You can submit now.</div>,
+  ];
+
+  const handleNext = () => {
+    let modalMessage = "";
+    let cancelMessage = "";
+
+    // Customize the confirmation and cancel messages based on the current page
+    if (currentPage === 0) {
+      modalMessage = "Please make sure the form is printed before proceeding.";
+      cancelMessage = "You need to print the form first before moving to the next page.";
+    } else if (currentPage === 1) {
+      modalMessage = "Ensure you have reviewed the details on this page.";
+      cancelMessage = "You cannot proceed without reviewing the details.";
+    } else if (currentPage === 2) {
+      modalMessage = "Double-check your information before moving forward.";
+      cancelMessage = "Please verify your information before going ahead.";
+    } else if (currentPage === 3) {
+      modalMessage = "You are on the last step. Are you ready to submit?";
+      cancelMessage = "You need to review the form before submitting.";
+    }
+
+    // Show confirmation dialog with the appropriate message
+    Modal.confirm({
+      title: "Do you want to go to the next page?",
+      content: modalMessage,
+      onOk: () => {
+        setCurrentPage((prev) => Math.min(prev + 1, pages.length - 1));
+      },
+      onCancel: () => {
+        notification.info({
+          message: "Action Required",
+          description: cancelMessage, // Display the customized cancel message
+        });
+      },
+    });
+  };
+
+  const handlePrevious = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 0));
+  };
+
+  const handleSubmit = () => {
+    console.log("Submitted!");
+    setIsModalOpen(false);
+    setCurrentPage(0); // Reset to the first page when modal closes
+  };
+
+  return (
+    <div>
+      {/* Button to Open Modal */}
+      <Button type="primary" onClick={() => setIsModalOpen(true)}>
+        Open Multi-Page Modal
+      </Button>
+
+      {/* Modal */}
+      <Modal
+        title="Multi-Page Modal"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            {/* Previous Button */}
+            <Button
+              disabled={currentPage === 0}
+              onClick={handlePrevious}
+            >
+              Previous
+            </Button>
+
+            {/* Next and Submit Buttons */}
+            <div>
+              <Button
+                type="primary"
+                disabled={currentPage === pages.length - 1}
+                onClick={handleNext}
+                style={{ marginRight: "8px" }}
+              >
+                Next
+              </Button>
+              <Button
+                type="primary"
+                onClick={handleSubmit}
+                disabled={currentPage !== pages.length - 1} // Enable only on the last page
+              >
+                Submit
+              </Button>
+            </div>
+          </div>
+        }
+      >
+        {/* Page Content */}
+        {pages[currentPage]}
+        {currentPage === 0 && (
+          <Button
+            type="default"
+            onClick={() => window.print()}
+            style={{
+              position: "absolute",
+              top: "50px", // Adjusted to position below close icon
+              right: "16px",
+            }}
+          >
+            Print
+          </Button>
+        )}
+      </Modal>
+    </div>
+  );
+};
+
+export default MultiPageModal;

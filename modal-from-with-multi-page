@@ -1,0 +1,223 @@
+
+// const MultiPageModal = () => {
+//   const [isModalOpen, setIsModalOpen] = useState(false);
+//   const [currentPage, setCurrentPage] = useState(0);
+//   const [uploadedFile, setUploadedFile] = useState(null);
+//   const [crop, setCrop] = useState(null);
+//   const [completedCrop, setCompletedCrop] = useState(null);
+//   const [previews, setPreviews] = useState([]); // Array to store up to two previews
+//   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+
+//   const imageRef = useRef(null);
+//   const canvasRef = useRef(null);
+
+//   const generatePreview = (crop) => {
+//     if (!imageRef.current || !crop.width || !crop.height) return;
+
+//     const canvas = canvasRef.current;
+//     const scaleX = imageRef.current.naturalWidth / imageRef.current.width;
+//     const scaleY = imageRef.current.naturalHeight / imageRef.current.height;
+//     const ctx = canvas.getContext("2d");
+
+//     canvas.width = crop.width;
+//     canvas.height = crop.height;
+
+//     ctx.drawImage(
+//       imageRef.current,
+//       crop.x * scaleX,
+//       crop.y * scaleY,
+//       crop.width * scaleX,
+//       crop.height * scaleY,
+//       0,
+//       0,
+//       crop.width,
+//       crop.height
+//     );
+
+//     const previewURL = canvas.toDataURL("image/png");
+
+//     // Add the new preview to the previews array
+//     setPreviews((prev) => [...prev, previewURL]);
+//     setConfirmModalOpen(true); // Open confirmation modal after preview generation
+//   };
+
+//   const handleTakeSnip = () => {
+//     if (completedCrop && completedCrop.width && completedCrop.height) {
+//       generatePreview(completedCrop);
+//     }
+//   };
+
+//   const handleConfirmPreview = () => {
+//     setConfirmModalOpen(false);
+
+//     // Disable further cropping after two previews
+//     if (previews.length === 2) {
+//       setCrop(null); // Disable cropping for further previews
+//     }
+//   };
+
+//   const handleRejectPreview = () => {
+//     // Allow the user to re-crop the current preview
+//     setPreviews((prev) => prev.slice(0, -1)); // Remove the last preview
+//     setConfirmModalOpen(false);
+//   };
+
+//   const handleNext = () => {
+//     setCurrentPage((prev) => Math.min(prev + 1, pages.length - 1));
+//   };
+
+//   const handlePrevious = () => {
+//     setCurrentPage((prev) => Math.max(prev - 1, 0));
+//   };
+
+//   const handleSubmit = () => {
+//     console.log("Submitted Previews:", previews);
+//     setIsModalOpen(false);
+//     setCurrentPage(0);
+//     setPreviews([]); // Clear previews after submission
+//   };
+
+//   const pages = [
+//     <div>Print This Form</div>,
+//     <div>Page 2 Content: Here's some additional information.</div>,
+//     <div>Page 3 Content: Almost there. Just one more step!</div>,
+//     <div>
+//       <div>
+//         <Upload
+//           accept=".jpg,.png"
+//           beforeUpload={(file) => {
+//             const reader = new FileReader();
+//             reader.onload = (e) => {
+//               setUploadedFile(e.target.result);
+//               setPreviews([]); // Clear previous previews when a new file is uploaded
+//               setCrop(null); // Enable cropping for the new file
+//             };
+//             reader.readAsDataURL(file);
+//             return false;
+//           }}
+//         >
+//           <Button icon={<UploadOutlined />}>Upload File</Button>
+//         </Upload>
+//         {uploadedFile && (
+//           <div style={{ marginTop: "16px" }}>
+//             <div>
+//               <h4>Uploaded Image:</h4>
+//               <ReactCrop
+//                 crop={crop}
+//                 onChange={(c) => setCrop(c)}
+//                 onComplete={(c) => setCompletedCrop(c)}
+//                 keepSelection={true} // Allows the user to move the crop box freely
+//               >
+//                 <img
+//                   ref={imageRef}
+//                   src={uploadedFile}
+//                   alt="Uploaded"
+//                   style={{ maxWidth: "100%" }}
+//                 />
+//               </ReactCrop>
+//               <Button
+//                 type="primary"
+//                 style={{ marginTop: "16px" }}
+//                 onClick={handleTakeSnip}
+//                 disabled={!completedCrop || previews.length >= 2}
+//               >
+//                 Take Snip
+//               </Button>
+//             </div>
+//             <canvas ref={canvasRef} style={{ display: "none" }} />
+//             {previews.length > 0 && (
+//               <div style={{ marginTop: "16px" }}>
+//                 <h4>Previews:</h4>
+//                 {previews.map((preview, index) => (
+//                   <div key={index} style={{ marginBottom: "8px" }}>
+//                     <img
+//                       src={preview}
+//                       alt={`Preview ${index + 1}`}
+//                       style={{
+//                         maxWidth: "100%",
+//                         border: "1px solid #ccc",
+//                         marginBottom: "4px",
+//                       }}
+//                     />
+//                     <a href={preview} download={`preview-${index + 1}.png`}>
+//                       <Button type="primary" size="small">
+//                         Download Preview {index + 1}
+//                       </Button>
+//                     </a>
+//                   </div>
+//                 ))}
+//               </div>
+//             )}
+//           </div>
+//         )}
+//       </div>
+//     </div>,
+//   ];
+
+//   return (
+//     <div style={{ padding: "16px" }}>
+//       <div style={{ marginBottom: "16px", borderBottom: "1px solid #ccc" }}>
+//         <h2>Navbar Placeholder</h2>
+//       </div>
+//       <Button
+//         type="primary"
+//         onClick={() => setIsModalOpen(true)}
+//         style={{ float: "right" }}
+//       >
+//         Open Multi-Page Modal
+//       </Button>
+
+//       <Modal
+//         title="Multi-Page Modal"
+//         open={isModalOpen}
+//         onCancel={() => setIsModalOpen(false)}
+//         footer={
+//           <div style={{ display: "flex", justifyContent: "space-between" }}>
+//             <Button disabled={currentPage === 0} onClick={handlePrevious}>
+//               Previous
+//             </Button>
+//             <div>
+//               <Button
+//                 type="primary"
+//                 disabled={currentPage === pages.length - 1}
+//                 onClick={handleNext}
+//                 style={{ marginRight: "8px" }}
+//               >
+//                 Next
+//               </Button>
+//               <Button
+//                 type="primary"
+//                 onClick={handleSubmit}
+//                 disabled={currentPage !== pages.length - 1 || previews.length < 2}
+//               >
+//                 Submit
+//               </Button>
+//             </div>
+//           </div>
+//         }
+//       >
+//         {pages[currentPage]}
+//       </Modal>
+
+//       <Modal
+//         title="Confirm Preview"
+//         open={confirmModalOpen}
+//         onOk={handleConfirmPreview}
+//         onCancel={handleRejectPreview}
+//         okText="Accept"
+//         cancelText="Re-crop"
+//       >
+//         <p>Is this preview acceptable?</p>
+//         {previews.length > 0 && (
+//           <img
+//             src={previews[previews.length - 1]}
+//             alt="Current Preview"
+//             style={{ maxWidth: "100%", border: "1px solid #ccc" }}
+//           />
+//         )}
+//       </Modal>
+//     </div>
+//   );
+// };
+
+// export default MultiPageModal;

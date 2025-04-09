@@ -1,0 +1,143 @@
+import React, { useState, useContext, useRef } from 'react';
+import { Table, Input, InputNumber, Popconfirm, Form, Button } from 'antd';
+
+const EditableContext = React.createContext(null);
+
+const EditableRow = ({ index, ...props }) => {
+  const [form] = Form.useForm();
+  return (
+    <Form form={form} component={false}>
+      <EditableContext.Provider value={form}>
+        <tr {...props} />
+      </EditableContext.Provider>
+    </Form>
+  );
+};
+
+const EditableCell = ({
+  title,
+  editable,
+  children,
+  dataIndex,
+  record,
+  handleSave,
+  inputType,
+  ...restProps
+}) => {
+  const [editing, setEditing] = useState(false);
+  const inputRef = useRef(null);
+  const form = useContext(EditableContext);
+
+  const toggleEdit = () => {
+    setEditing(!editing);
+    form.setFieldsValue({ [dataIndex]: record[dataIndex] });
+  };
+
+  const save = async () => {
+    try {
+      const values = await form.validateFields();
+      toggleEdit();
+      handleSave({ ...record, ...values });
+    } catch (errInfo) {
+      console.log('Save failed:', errInfo);
+    }
+  };
+
+  let childNode = children;
+
+  if (editable) {
+    childNode = editing ? (
+      inputType === 'number' ? (
+        <Form.Item
+          style={{ margin: 0 }}
+          name={dataIndex}
+          rules={[{ required: true, message: `${title} is required.` }]}
+        >
+          <InputNumber ref={inputRef} onPressEnter={save} onBlur={save} />
+        </Form.Item>
+      ) : (
+        <Form.Item
+          style={{ margin: 0 }}
+          name={dataIndex}
+          rules={[{ required: true, message: `${title} is required.` }]}
+        >
+          <Input ref={inputRef} onPressEnter={save} onBlur={save} />
+        </Form.Item>
+      )
+    ) : (
+      <div onClick={toggleEdit} style={{ cursor: 'pointer' }}>{children}</div>
+    );
+  }
+
+  return <td {...restProps}>{childNode}</td>;
+};
+
+const EditableTable = () => {
+  const [dataSource, setDataSource] = useState([
+    { key: '1', name: 'John Brown', age: 32 },
+    { key: '2', name: 'Jim Green', age: 42 },
+  ]);
+
+  const handleSave = (row) => {
+    const newData = [...dataSource];
+    const index = newData.findIndex((item) => item.key === row.key);
+    newData[index] = { ...newData[index], ...row };
+    setDataSource(newData);
+  };
+
+  const columns = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      editable: true,
+    },
+    {
+      title: 'Age',
+      dataIndex: 'age',
+      editable: true,
+      inputType: 'number',
+    },
+    {
+      title: 'Action',
+      dataIndex: 'action',
+      render: (_, record) =>
+        <Popconfirm title="Sure to delete?" onConfirm={() => {
+          setDataSource(dataSource.filter(item => item.key !== record.key));
+        }}>
+          <a>Delete</a>
+        </Popconfirm>,
+    },
+  ];
+
+  const mergedColumns = columns.map((col) => {
+    if (!col.editable) return col;
+    return {
+      ...col,
+      onCell: (record) => ({
+        record,
+        editable: col.editable,
+        inputType: col.inputType || 'text',
+        dataIndex: col.dataIndex,
+        title: col.title,
+        handleSave,
+      }),
+    };
+  });
+
+  return (
+    <Table
+      components={{
+        body: {
+          row: EditableRow,
+          cell: EditableCell,
+        },
+      }}
+      rowClassName="editable-row"
+      bordered
+      dataSource={dataSource}
+      columns={mergedColumns}
+    />
+  );
+};
+
+export default EditableTable;
